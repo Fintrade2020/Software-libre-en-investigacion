@@ -1,0 +1,371 @@
+---
+title: "Codigo Final"
+author: "Yisel Gordillo"
+date: "14/7/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Cargar Librerias
+
+```{r}
+library(readr)
+library(datasets)
+library(magrittr)
+library(dplyr)
+```
+
+#Traer Base de datos
+
+```{r}
+emerging_market_fund <- read_csv("https://www.ishares.com/us/products/239637/ishares-msci-emerging-markets-etf/1467271812596.ajax?fileType=csv&fileName=EEM_holdings&dataType=fund", 
+                                 skip = 10)
+```
+
+# Mirar los datos
+```{r}
+head(emerging_market_fund)
+```
+
+# Crear Tabla
+```{r}
+emerging_market_fund_country_weights <- emerging_market_fund %>% 
+  select(Taiwan) %>%
+  mutate(Taiwan = replace(Taiwan, Taiwan == "Russian Federation", "Russia"), 
+         Taiwan = replace(Taiwan, Taiwan == "Korea (South)", "Korea"),
+         Taiwan = replace(Taiwan, Taiwan == "KO", "Korea"),
+         Taiwan = replace(Taiwan, Taiwan == "Czech Republic", "Czech Rep.") ) %>%
+  group_by(Taiwan) %>% 
+  summarise(EEM = sum( na.rm = TRUE)) %>% 
+  rename(name = Taiwan) %>% 
+  filter(EEM > 0) %>% 
+  filter(name != "-") %>% 
+  arrange(desc(EEM))
+
+```
+
+# Mirar los datos
+
+```{r}
+emerging_market_fund_country_weights
+```
+
+# Wrangle para que la tabla de datos muestre los nombres de las empresas, el sector y los pesos.
+
+```{r}
+EEM <- emerging_market_fund %>% 
+  select(`TAIWAN SEMICONDUCTOR MANUFACTURING`, Taiwan, `Information Technology`, `21.69`, `Taiwan Stock Exchange`) %>% 
+  mutate(Taiwan = replace(Taiwan, Taiwan == "Russian Federation", "Russia"), 
+         Taiwan = replace(Taiwan, Taiwan == "Korea (South)", "Korea"),
+         Taiwan = replace(Taiwan, Taiwan == "Czech Republic", "Czech Rep.")
+  ) %>% 
+  filter(`21.69` > 0) %>% 
+    filter(Taiwan != "-") 
+```
+
+
+#VER LA VARIABLE
+```{r}
+EEM
+```
+
+
+
+# Ver en Brasil para comprobar que esta bien
+
+```{r}
+Brazil_companies <- EEM %>%
+  filter(Taiwan == "Brazil") %>% 
+  ungroup() %>% 
+  select(-Taiwan)
+
+Brazil_companies
+```
+
+
+# Cargar nuevas librerias
+
+
+```{r}
+library(rgdal)
+library(rmapshaper)
+library(httr)
+```
+
+# Cargar dataframe especial
+
+```{r}
+tmp_zipped <- tempfile()
+tmp_unzipped <- tempfile()
+```
+
+
+#Llamar nueva base de datos
+```{r}
+httr::GET("http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_0_countries.zip", write_disk(tmp_zipped))
+```
+
+
+
+# Llamar unzip
+
+```{r}
+unzip(tmp_zipped, exdir = tmp_unzipped)
+world <- readOGR(tmp_unzipped, 'ne_50m_admin_0_countries', verbose = FALSE)
+```
+
+# Usar ms_simplify para reducir el tamaño
+```{r}
+world <- ms_simplify(world)
+```
+
+#Cargar nuevas librerias
+```{r}
+library(sp)
+library(leaflet)
+```
+
+#Nombrar varibales
+```{r}
+world_fund_country_weights <- merge(world, emerging_market_fund_country_weights, by = "name") 
+```
+
+
+# Echemos un vistazo y asegurémonos de que la fusión logró lo que queríamos. Habrá
+# varios valores NA, porque este fondo está asignado sólo a los mercados emergentes. Los mercados desarrollados
+# deben ser en su mayoría NAs - Australia es inmediatamente visible para nosotros como un NA.
+```{r}
+
+world_fund_country_weights@data[c('name', 'EEM')]
+```
+
+##                     name     EEM
+## 1            Afghanistan      NA
+## 4                 Angola      NA
+## 2                Albania      NA
+## 162 United Arab Emirates  0.7672
+## 6              Argentina      NA
+## 7                Armenia      NA
+## 5             Antarctica      NA
+## 8              Australia      NA
+## 9                Austria      NA
+## 10            Azerbaijan      NA
+## 24               Burundi      NA
+## 13               Belgium      NA
+## 15                 Benin      NA
+## 23          Burkina Faso      NA
+## 11            Bangladesh      NA
+## 22              Bulgaria      NA
+## 18      Bosnia and Herz.      NA
+## 12               Belarus      NA
+## 14                Belize      NA
+## 17               Bolivia      NA
+## 20                Brazil  7.4449
+## 21                Brunei      NA
+## 16                Bhutan      NA
+## 19              Botswana      NA
+## 28  Central African Rep.      NA
+## 27                Canada      NA
+## 149          Switzerland  0.0814
+## 30                 Chile  1.2210
+## 31                 China 26.2637
+## 35         Côte d'Ivoire      NA
+## 26              Cameroon      NA
+## 40       Dem. Rep. Congo      NA
+## 33                 Congo      NA
+## 32              Colombia  0.4224
+## 34            Costa Rica      NA
+## 37                  Cuba      NA
+## 107            N. Cyprus      NA
+## 38                Cyprus      NA
+## 39            Czech Rep.  0.1802
+## 58               Germany      NA
+## 43              Djibouti      NA
+## 42               Denmark      NA
+## 44        Dominican Rep.      NA
+## 3                Algeria      NA
+## 45               Ecuador      NA
+## 46                 Egypt  0.1191
+## 49               Eritrea      NA
+## 143                Spain      NA
+## 50               Estonia      NA
+## 51              Ethiopia      NA
+## 54               Finland      NA
+## 53                  Fiji      NA
+## 52          Falkland Is.      NA
+## 55                France      NA
+## 56                 Gabon      NA
+## 163       United Kingdom      NA
+## 57               Georgia      NA
+## 59                 Ghana      NA
+## 63                Guinea      NA
+## 64         Guinea-Bissau      NA
+## 48            Eq. Guinea      NA
+## 60                Greece  0.3025
+## 61             Greenland      NA
+## 62             Guatemala      NA
+## 65                Guyana      NA
+## 67              Honduras      NA
+## 36               Croatia      NA
+## 66                 Haiti      NA
+## 68               Hungary  0.2818
+## 71             Indonesia  2.4890
+## 70                 India  8.5008
+## 74               Ireland      NA
+## 72                  Iran      NA
+## 73                  Iraq      NA
+## 69               Iceland      NA
+## 75                Israel      NA
+## 76                 Italy      NA
+## 77               Jamaica      NA
+## 79                Jordan      NA
+## 78                 Japan      NA
+## 136      Siachen Glacier      NA
+## 80            Kazakhstan      NA
+## 81                 Kenya      NA
+## 85            Kyrgyzstan      NA
+## 25              Cambodia      NA
+## 82                 Korea 14.9220
+## 83                Kosovo      NA
+## 84                Kuwait      NA
+## 86               Lao PDR      NA
+## 88               Lebanon      NA
+## 90               Liberia      NA
+## 91                 Libya      NA
+## 144            Sri Lanka      NA
+## 89               Lesotho      NA
+## 92             Lithuania      NA
+## 93            Luxembourg      NA
+## 87                Latvia      NA
+## 104              Morocco      NA
+## 101              Moldova      NA
+## 95            Madagascar      NA
+## 100               Mexico  3.6169
+## 94             Macedonia      NA
+## 98                  Mali      NA
+## 106              Myanmar      NA
+## 103           Montenegro      NA
+## 102             Mongolia      NA
+## 105           Mozambique      NA
+## 99            Mauritania      NA
+## 96                Malawi      NA
+## 97              Malaysia  2.4130
+## 108              Namibia      NA
+## 111        New Caledonia      NA
+## 114                Niger      NA
+## 115              Nigeria      NA
+## 113            Nicaragua      NA
+## 110          Netherlands  0.3367
+## 116               Norway      NA
+## 109                Nepal      NA
+## 112          New Zealand      NA
+## 117                 Oman      NA
+## 118             Pakistan      NA
+## 120               Panama      NA
+## 123                 Peru  0.3722
+## 124          Philippines  1.1454
+## 121     Papua New Guinea      NA
+## 125               Poland  1.2310
+## 127          Puerto Rico      NA
+## 41       Dem. Rep. Korea      NA
+## 126             Portugal      NA
+## 122             Paraguay      NA
+## 119            Palestine      NA
+## 128                Qatar  0.7938
+## 129              Romania      NA
+## 130               Russia  3.7714
+## 131               Rwanda      NA
+## 169            W. Sahara      NA
+## 133         Saudi Arabia      NA
+## 145                Sudan      NA
+## 132             S. Sudan      NA
+## 134              Senegal      NA
+## 137         Sierra Leone      NA
+## 47           El Salvador      NA
+## 141           Somaliland      NA
+## 140              Somalia      NA
+## 135               Serbia      NA
+## 146             Suriname      NA
+## 138             Slovakia      NA
+## 139             Slovenia      NA
+## 148               Sweden      NA
+## 147            Swaziland      NA
+## 150                Syria      NA
+## 29                  Chad      NA
+## 156                 Togo      NA
+## 154             Thailand  2.2042
+## 152           Tajikistan      NA
+## 159         Turkmenistan      NA
+## 155          Timor-Leste      NA
+## 157              Tunisia      NA
+## 158               Turkey  1.0363
+## 151               Taiwan 12.1916
+## 153             Tanzania      NA
+## 160               Uganda      NA
+## 161              Ukraine      NA
+## 165              Uruguay      NA
+## 164        United States  0.4507
+## 166           Uzbekistan      NA
+## 167            Venezuela      NA
+## 168              Vietnam      NA
+## 170                Yemen      NA
+## 142         South Africa  6.7359
+## 171               Zambia      NA
+## 172             Zimbabwe      NA
+
+
+
+# Creemos una ventana emergente para mostrar el peso exacto del país.
+
+```{r}
+EEMPopup <- paste0("<strong>Country: </strong>", 
+                   world_fund_country_weights$name,
+                   "<br><strong> Country Weight: </strong>", 
+                   world_fund_country_weights$EEM, "%")
+```
+
+# Creemos dos paletas para poder ver dos variantes. Esto es pura estética, pero el Notebook es el
+# lugar para la estética.
+
+```{r}
+EEMPalGreens <- colorQuantile("Greens", world_fund_country_weights$EEM, n = 20)
+EEMPalPurples <- colorQuantile("Purples", world_fund_country_weights$EEM, n = 20)
+```
+
+
+# Construye un mapa sombreado de color verde
+```{r}
+leaf_world_emerging_greens <- leaflet(world_fund_country_weights) %>%
+  addProviderTiles("CartoDB.Positron") %>% 
+  setView(lng =  20, lat =  15, zoom = 2) %>%
+  addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = .7,
+              
+              # esta linea es importante
+              
+              color =~EEMPalGreens(EEM), layerId = ~name, popup = EEMPopup)
+```
+
+
+
+# Construye un mapa sombreado de color púrpura
+```{r}
+leaf_world_emerging_purples <- leaflet(world_fund_country_weights) %>%
+  addProviderTiles("CartoDB.Positron") %>% 
+  setView(lng =  20, lat =  15, zoom = 2) %>%
+  addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = .7,
+              color =~EEMPalPurples(EEM), layerId = ~name, popup = EEMPopup)
+```
+
+# Comparemos nuestro mapa sombreado en verde con nuestro 
+#mapa sombreado en púrpura.
+
+```{r}
+
+leaf_world_emerging_greens
+
+leaf_world_emerging_purples
+```
+
