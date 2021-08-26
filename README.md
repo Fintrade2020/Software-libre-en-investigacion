@@ -14,10 +14,10 @@ Grabación: [***Para ver la segunda clase da clic acá***](https://unisalleedu-m
 
 ### Unidad 3. Uso de Phyton e instalación
 
-Grabación: [***Para ver la segunda clase da clic acá***](https://unisalleedu-my.sharepoint.com/:v:/g/personal/yandreagchacon16_unisalle_edu_co/EdOhjf8r0WdIjU2k-tSuYLoBDcoDYgs_ySbRqZr8FoVTYg?e=rpiUbX)
+Grabación: [***Para ver la tercera clase da clic acá***](https://unisalleedu-my.sharepoint.com/:v:/g/personal/yandreagchacon16_unisalle_edu_co/EdOhjf8r0WdIjU2k-tSuYLoBDcoDYgs_ySbRqZr8FoVTYg?e=rpiUbX)
 
 ### Unidad 4. Caso de estudio
 
-Grabación: [***Para ver la segunda clase da clic acá***](https://unisalleedu-my.sharepoint.com/:v:/g/personal/yandreagchacon16_unisalle_edu_co/EZhs14Tax9FAt1gWVbi04AAB1_bmrPe1s4_nIzgkGa1oiA?e=0LsEdt)
+Grabación: [***Para ver la cuarta clase da clic acá***](https://unisalleedu-my.sharepoint.com/:v:/g/personal/yandreagchacon16_unisalle_edu_co/EZhs14Tax9FAt1gWVbi04AAB1_bmrPe1s4_nIzgkGa1oiA?e=0LsEdt)
 
 
